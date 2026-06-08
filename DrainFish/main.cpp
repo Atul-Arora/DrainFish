@@ -17,43 +17,80 @@ using namespace std;
 #define BLACK_QUEEN 10
 #define BLACK_KING 11
 #define EMPTY 12
+#define WHITE 13
+#define BLACK 14
+
+struct Move {
+	uint8_t from;
+	uint8_t to;
+	uint8_t promotion;
+};
+
+
+struct BoardState {
+	uint64_t bitboards[12];
+	bool WKC, WQC, BKC, BQC;
+	uint64_t passantTarget;
+	uint8_t turn;
+};
 
 class ChessBoard {
-	std::uint64_t bitboards[12];
+	BoardState* stateStack;
+	int stateIndex;
 public:
 	std::uint8_t getPiece(std::uint8_t square) {
 		std::uint64_t mask = uint64_t(1) << square;
 		for (int i = 0;i < 12;i++) {
-			if (mask & bitboards[i]) return i;
+			if (mask & stateStack[stateIndex].bitboards[i]) return i;
 		}
 		return EMPTY;
 	}
 
 	void setPiece(std::uint8_t piece, std::uint8_t square) {
-		std::int64_t mask = uint64_t(1) << square;
+		std::uint64_t mask = uint64_t(1) << square;
 		for (int i = 0;i < 12;i++) {
-			if (i == piece) bitboards[i] |= mask;
-			else bitboards[i] &= ~mask;
+			if (i == piece) stateStack[stateIndex].bitboards[i] |= mask;
+			else stateStack[stateIndex].bitboards[i] &= ~mask;
 		}
-
-
 	}
+	/*void move(const Move& move) {
+
+	*/
+	void Undo(){
+		if (stateIndex > 0) --stateIndex;
+	}
+
 
 	ChessBoard() {
-		bitboards[WHITE_PAWN] = 0x00ff000000000000;
-		bitboards[WHITE_KNIGHT] = 0x2400000000000000;
-		bitboards[WHITE_BISHOP] = 0x4200000000000000;
-		bitboards[WHITE_ROOK] = 0x8100000000000000;
-		bitboards[WHITE_QUEEN] = 0x0800000000000000;
-		bitboards[WHITE_KING] = 0x1000000000000000;
-		bitboards[BLACK_PAWN] = 0x000000000000ff00;
-		bitboards[BLACK_KNIGHT] = 0x0000000000000024;
-		bitboards[BLACK_BISHOP] = 0x0000000000000042;
-		bitboards[BLACK_ROOK] = 0x0000000000000081;
-		bitboards[BLACK_QUEEN] = 0x0000000000000008;
-		bitboards[BLACK_KING] = 0x0000000000000010;
+		stateStack = new BoardState[500];
+		stateIndex = 0;
+		stateStack[0].bitboards[WHITE_PAWN] = 0x00ff000000000000;
+		stateStack[0].bitboards[WHITE_KNIGHT] = 0x4200000000000000;
+		stateStack[0].bitboards[WHITE_BISHOP] = 0x2400000000000000;
+		stateStack[0].bitboards[WHITE_ROOK] = 0x8100000000000000;
+		stateStack[0].bitboards[WHITE_QUEEN] = 0x0800000000000000;
+		stateStack[0].bitboards[WHITE_KING] = 0x1000000000000000;
+		stateStack[0].bitboards[BLACK_PAWN] = 0x000000000000ff00;
+		stateStack[0].bitboards[BLACK_KNIGHT] = 0x0000000000000042;
+		stateStack[0].bitboards[BLACK_BISHOP] = 0x0000000000000024;
+		stateStack[0].bitboards[BLACK_ROOK] = 0x0000000000000081;
+		stateStack[0].bitboards[BLACK_QUEEN] = 0x0000000000000008;
+		stateStack[0].bitboards[BLACK_KING] = 0x0000000000000010;
 		cout << "Initialized";
+		stateStack[0].WKC = true;
+		stateStack[0].WQC = true;
+		stateStack[0].BKC = true;
+		stateStack[0].BQC = true;
+
+		stateStack[0].passantTarget=0;
+
+		stateStack[0].turn = WHITE;
+
 	}
+
+	~ChessBoard() {
+		delete[] stateStack;
+	};
 
 };
 ChessBoard game;
@@ -284,7 +321,14 @@ void mouse(int button, int state, int x, int y)
 void keydown(unsigned char key, int x, int y)
 {
 	if (key == 27) glutLeaveMainLoop(); // exit when the user presses esc
+	if (key == ' ') // flip the board if the user presses the spacebar
+	{
+		square_x += 8 * square_size;
+		square_y += 8 * square_size;
+		square_size *= -1;
+	}
 }
+
 
 // timer function
 void timer(int value)
@@ -294,7 +338,6 @@ void timer(int value)
 	glutTimerFunc(16, timer, NULL);
 }
 
-// function to handle window resizing
 void resize(int w, int h)
 {
 	// set global width and height
@@ -302,6 +345,7 @@ void resize(int w, int h)
 	height = h;
 
 	// recalculate board parameters
+	bool isFlipped = square_size < 0;
 	if (width > height)
 	{
 		board_size = height;
@@ -319,11 +363,14 @@ void resize(int w, int h)
 	square_x = board_x + board_size * 0.05;
 	square_y = board_y + board_size * 0.05;
 
+	if (isFlipped) keydown(' ', 0, 0);
+
 	// reset the viewport
 	glViewport(0, 0, width, height);
 	glLoadIdentity();
 	gluOrtho2D(0, width, height, 0);
 }
+
 
 // main function
 int main(int argc, char** argv)

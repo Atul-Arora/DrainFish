@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="DrainFish/DrainFish.vcxproj" />
+  <Project Path="DrainFish/DrainFish.vcxproj" Id="df27c172-5e94-454e-b30d-81a88fb6aac7" />
 </Solution>
