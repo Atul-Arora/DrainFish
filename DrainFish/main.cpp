@@ -53,9 +53,20 @@ public:
 			else stateStack[stateIndex].bitboards[i] &= ~mask;
 		}
 	}
-	/*void move(const Move& move) {
+	void move(const Move& move) {
+		uint64_t fromBoard = uint64_t(1) << move.from;
+		uint64_t toBoard = uint64_t(1) << move.to;
+		uint64_t moveBoard = fromBoard | toBoard;
+		uint8_t  movedPiece = 0;
+		
+		if(stateStack[stateIndex].turn==WHITE)
+		{
+			for (int i=0;i<6;i++){
+			
+			}
+		}
 
-	*/
+	}
 	void Undo(){
 		if (stateIndex > 0) --stateIndex;
 	}
@@ -111,6 +122,9 @@ double square_y = board_y + board_size * 0.05;
 // These are board coordinates not screen coordinates 
 int select_x = -1;
 int select_y = -1;
+
+Move moveHistory[500];
+int moveIndex = 0;
 
 void drawPiece(int x, int y, int size, int piece)
 {
